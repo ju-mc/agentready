@@ -1,5 +1,6 @@
 import { getPaidReport } from "@/lib/payments";
 import { reportMarkdown } from "@/lib/markdown";
+import { reportPdf } from "@/lib/pdf";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -17,6 +18,10 @@ export async function GET(req: Request) {
     robots: [r.artifacts?.robotsTxt ?? "", "text/plain", "robots.txt"],
     jsonld: [r.artifacts?.jsonLd ?? "", "text/html", "jsonld-snippet.html"],
   };
+  if (q.get("file") === "pdf") {
+    const pdf = await reportPdf(r);
+    return new Response(Buffer.from(pdf), { headers: { "content-type": "application/pdf", "content-disposition": `attachment; filename="agentscore-${host}.pdf"` } });
+  }
   const f = files[q.get("file") || "md"];
   if (!f) return new Response("Unknown file", { status: 400 });
   return new Response(f[0], { headers: { "content-type": `${f[1]}; charset=utf-8`, "content-disposition": `attachment; filename="${f[2]}"` } });

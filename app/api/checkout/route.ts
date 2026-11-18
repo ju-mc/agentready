@@ -22,11 +22,14 @@ export async function POST(req: Request) {
       price_data: {
         currency: "usd",
         unit_amount: PRICE_CENTS,
-        product_data: { name: `AgentScore full report: ${target.hostname}`, description: "Every check explained, fixes, page-by-page results, and ready-to-paste llms.txt, robots.txt and JSON-LD." },
+        product_data: { name: `AgentScore full report: ${target.hostname}`, description: "Every check explained with fixes, page-by-page results, and ready-to-paste llms.txt, robots.txt and JSON-LD. Emailed to you as PDF, Markdown and JSON." },
       },
     }],
     metadata: { url: target.toString() },
     allow_promotion_codes: true,
+    custom_text: {
+      submit: { message: "We'll send a copy of your report to this email. You'll also be able to download it from the next page." },
+    },
     success_url: `${base}/report?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/?url=${encodeURIComponent(target.toString())}`,
   });

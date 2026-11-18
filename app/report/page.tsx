@@ -1,7 +1,6 @@
-import { getPaidReport } from "@/lib/payments";
+import { getPaidReportWithEmail } from "@/lib/payments";
 import { CATEGORIES, type CategoryId } from "@/lib/types";
 import { ScoreHeader } from "../ui";
-import { PrintButton } from "./PrintButton";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -9,10 +8,13 @@ export const dynamic = "force-dynamic";
 
 export default async function ReportPage({ searchParams }: { searchParams: Promise<{ session_id?: string; url?: string }> }) {
   const { session_id, url } = await searchParams;
-  let r: Awaited<ReturnType<typeof getPaidReport>> = null;
+  let r = null;
+  let email: string | null = null;
   let err = "";
   try {
-    r = await getPaidReport(session_id, url);
+    const paid = await getPaidReportWithEmail(session_id, url);
+    r = paid?.result ?? null;
+    email = paid?.email ?? null;
   } catch (e) {
     err = e instanceof Error ? e.message : "Something went wrong";
   }
@@ -36,10 +38,12 @@ export default async function ReportPage({ searchParams }: { searchParams: Promi
       <h1>AgentScore report</h1>
       <p className="muted small">Scanned {new Date(r.scannedAt).toUTCString()}</p>
       <div className="fix noprint" style={{ marginBottom: 12 }}>
-        <strong>Save your report:</strong> bookmark this page or download a copy below. This link is your access to the report.
+        {email
+          ? <><strong>We&apos;re emailing a copy to {email}.</strong> It should arrive in a few minutes (check spam if you don&apos;t see it). You can also download it below.</>
+          : <><strong>Save your report:</strong> bookmark this page or download a copy below. This link is your access to the report.</>}
       </div>
       <div className="row noprint" style={{ marginBottom: 8 }}>
-        <PrintButton />
+        <a className="btn accent" style={{ padding: "10px 14px", fontSize: 14 }} href={dl("pdf")}>Download PDF</a>
         <a className="btn secondary" href={dl("md")}>Download Markdown</a>
         <a className="btn secondary" href={dl("json")}>Raw JSON</a>
       </div>
