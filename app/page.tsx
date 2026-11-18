@@ -86,7 +86,7 @@ export default function Home() {
             <h2 style={{ marginTop: 0 }}>Get the full report: {PRICE}</h2>
             <p className="muted">
               {result.lockedIssues > 0 ? `${result.lockedIssues} more issue${result.lockedIssues === 1 ? "" : "s"}, plus ` : ""}
-              a step-by-step fix for every check, a 10-page sample of your site, and ready-to-paste <code>llms.txt</code>, <code>robots.txt</code> and JSON-LD files. Download as PDF or Markdown.
+              a step-by-step fix for every check, a 10-page sample of your site, and fixes for your site. Download as PDF or Markdown.
             </p>
             <button className="btn accent" onClick={unlock} disabled={paying}>{paying ? "Opening checkout…" : `Unlock full report: ${PRICE}`}</button>
           </div>
