@@ -6,7 +6,7 @@ export function ScoreHeader({ r }: { r: Pick<ScanResult, "score" | "grade" | "si
   return (
     <div className="card">
       <div className="scorebox">
-        <div className="score" style={{ color: color(r.score) }}>{r.score}</div>
+        <div className="score" style={{ color: color(r.score) }}>{r.score}<span style={{ fontSize: 24, fontWeight: 600, color: "var(--muted)" }}>/100</span></div>
         <div>
           <span className={`grade g-${r.grade}`}>Grade {r.grade}</span>
           <div style={{ marginTop: 8, fontWeight: 600 }}>{r.siteName}</div>
@@ -16,7 +16,7 @@ export function ScoreHeader({ r }: { r: Pick<ScanResult, "score" | "grade" | "si
       <div className="cats">
         {(Object.keys(CATEGORIES) as CategoryId[]).map((id) => (
           <div className="cat" key={id} title={CATEGORIES[id].blurb}>
-            <div className="n">{r.categories[id].score}</div>
+            <div className="n">{r.categories[id].score}<span style={{ fontSize: 13, fontWeight: 500, color: "var(--muted)" }}>/100</span></div>
             <div className="l">{CATEGORIES[id].label}</div>
             <div className="bar"><i style={{ width: `${r.categories[id].score}%`, background: color(r.categories[id].score) }} /></div>
           </div>
