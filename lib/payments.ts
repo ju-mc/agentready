@@ -29,7 +29,8 @@ export async function getPaidReport(sessionId?: string, devUrl?: string): Promis
     const s = stripe();
     if (!s) return null;
     const session = await s.checkout.sessions.retrieve(sessionId);
-    if (session.payment_status !== "paid") return null;
+    // "no_payment_required" = a 100%-off promo code was used (e.g. internal testing)
+    if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") return null;
     url = session.metadata?.url;
     key = `s:${sessionId}`;
   } else if (devUrl && devUnlock()) {
