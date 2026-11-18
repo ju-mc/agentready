@@ -29,7 +29,7 @@ export default function Privacy() {
       <p>We don&apos;t sell or rent personal information to anyone.</p>
 
       <h2>Contact</h2>
-      <p>Questions or deletion requests: reach out through <a href="https://checkagentscore.com">checkagentscore.com</a>.</p>
+      <p>Questions or deletion requests: <a href="mailto:hello@checkagentscore.com">hello@checkagentscore.com</a>.</p>
 
       <p style={{ marginTop: 40 }}><a href="/">← Back to AgentScore</a></p>
     </main>

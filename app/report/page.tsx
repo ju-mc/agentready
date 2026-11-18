@@ -21,7 +21,7 @@ export default async function ReportPage({ searchParams }: { searchParams: Promi
     return (
       <main className="wrap">
         <h1>Report not available</h1>
-        <p className="lede">{err || "We couldn't confirm a payment for this report. If you were charged, email us and we'll send it."}</p>
+        <p className="lede">{err || "We couldn't confirm a payment for this report. If you were charged, email hello@checkagentscore.com and we'll send it."}</p>
         <a className="btn" href="/">Run a free scan</a>
       </main>
     );

@@ -16,6 +16,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <footer className="noprint" style={{ textAlign: "center", padding: "24px 20px 40px", fontSize: 13, color: "var(--muted)" }}>
+          Questions or support? <a href="mailto:hello@checkagentscore.com" style={{ color: "inherit" }}>hello@checkagentscore.com</a>
+          <br />
           © {new Date().getFullYear()} AgentScore · <a href="/privacy" style={{ color: "inherit" }}>Privacy</a>
         </footer>
       </body>
