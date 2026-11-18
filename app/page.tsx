@@ -95,7 +95,7 @@ export default function Home() {
 
       {!result && !loading && (
         <div className="card small muted">
-          <strong style={{ color: "var(--fg)" }}>What we check:</strong> whether your site is set up so AI assistants can get in, understand what you offer, recommend you to users, answer questions about your business, and make purchases on your site.
+          <strong style={{ color: "var(--fg)" }}>What we check:</strong> whether AI agents are able to get into your site, understand what you offer, recommend you to users, answer questions about your business, and make purchases on your site.
         </div>
       )}
     </main>
