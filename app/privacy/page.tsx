@@ -17,7 +17,7 @@ export default function Privacy() {
       <p>Payments are handled by <a href="https://stripe.com/privacy" target="_blank" rel="noreferrer">Stripe</a>. We never see or store your card details. Stripe shares your email address and payment status with us so we can deliver and support your report.</p>
 
       <h2>Analytics and traffic verification</h2>
-      <p>This site is part of the Ship or Die hackathon, which loads a verification script on our pages to confirm traffic sources (for example, which site referred you). This script may collect standard visit data such as pages viewed, referrer, browser type and approximate location.</p>
+      <p>We use a third-party analytics script to understand how visitors find us (for example, which site referred you). It may collect standard visit data such as pages viewed, referrer, browser type and approximate location.</p>
 
       <h2>Hosting</h2>
       <p>The site is hosted on <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noreferrer">Vercel</a>, which keeps standard server logs.</p>
