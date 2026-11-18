@@ -34,9 +34,18 @@ const MACHINE_ENDPOINTS: { path: string; label: string; json: boolean }[] = [
   { path: "/.well-known/ai-plugin.json", label: "AI plugin manifest (legacy)", json: true },
 ];
 
-function check(c: Omit<Check, "earned"> & { earned?: number }): Check {
+/**
+ * `title` is the goal ("robots.txt allows AI agents"), shown when the check passes.
+ * `issue` is the problem-style name ("robots.txt blocks AI agents"), shown when it fails or warns.
+ */
+function check(c: Omit<Check, "earned"> & { earned?: number; issue?: string | { fail?: string; warn?: string } }): Check {
+  const { issue, ...rest } = c;
   const earned = c.earned ?? (c.status === "pass" ? c.max : c.status === "warn" ? Math.round(c.max / 2) : c.status === "info" ? c.max : 0);
-  return { ...c, earned };
+  let title = c.title;
+  if (issue && (c.status === "fail" || c.status === "warn")) {
+    title = (typeof issue === "string" ? issue : issue[c.status]) ?? c.title;
+  }
+  return { ...rest, title, earned };
 }
 
 function looksLikeHtml(body: string) {
@@ -112,7 +121,7 @@ function accessChecks(home: FetchResult, agent: FetchResult, robots: ParsedRobot
   const browserChallenged = CHALLENGE_MARKERS.some((r) => r.test(home.body));
   const agentBlocked = agent.status === 0 || agent.status === 403 || agent.status === 429 || agent.status === 503 || agentChallenged;
   out.push(check({
-    id: "bot-blocking", category: "access", title: "AI agents aren't blocked by your firewall", max: 15,
+    id: "bot-blocking", category: "access", title: "AI agents aren't blocked by your firewall", issue: { fail: "AI agents are blocked by your firewall", warn: "Bot challenges on every page can trip up AI agents" }, max: 15,
     status: agentBlocked ? "fail" : browserChallenged ? "warn" : "pass",
     summary: agentBlocked
       ? `A request identifying as an AI agent got ${agent.status === 0 ? "no response" : `HTTP ${agent.status}`}${agentChallenged ? " with a bot challenge page" : ""}.`
@@ -129,7 +138,7 @@ function accessChecks(home: FetchResult, agent: FetchResult, robots: ParsedRobot
   // 2. robots.txt rules for AI agents
   if (!robots) {
     out.push(check({
-      id: "robots-ai", category: "access", title: "robots.txt allows AI agents", max: 10, status: "warn",
+      id: "robots-ai", category: "access", title: "robots.txt allows AI agents", issue: robotsRes.status === 404 ? "No robots.txt policy for AI agents" : "robots.txt couldn't be read", max: 10, status: "warn",
       summary: robotsRes.status === 404 ? "No robots.txt — everything is allowed, but you're not stating a policy." : `robots.txt couldn't be read (HTTP ${robotsRes.status}).`,
       detail: "Without a robots.txt, crawlers assume everything is allowed. That's fine for access, but you lose control and can't point agents to your sitemap.",
       fix: "Add a robots.txt that explicitly allows user-facing AI agents and lists your sitemap. See the generated file in this report.",
@@ -143,7 +152,7 @@ function accessChecks(home: FetchResult, agent: FetchResult, robots: ParsedRobot
     const blockedTraining = rows.filter((r) => r.kind === "training" && r.access === "blocked");
     const status: Status = blockedUser.length ? "fail" : blockedSearch.length ? "warn" : "pass";
     out.push(check({
-      id: "robots-ai", category: "access", title: "robots.txt allows AI agents", max: 10, status,
+      id: "robots-ai", category: "access", title: "robots.txt allows AI agents", issue: { fail: "robots.txt blocks AI assistants", warn: "robots.txt blocks AI search bots" }, max: 10, status,
       earned: blockedUser.length ? 0 : blockedSearch.length ? 5 : 10,
       summary: blockedUser.length
         ? `robots.txt blocks user-triggered agents: ${blockedUser.map((r) => r.bot).join(", ")}.`
@@ -160,7 +169,7 @@ function accessChecks(home: FetchResult, agent: FetchResult, robots: ParsedRobot
 
   // 3. HTTPS
   out.push(check({
-    id: "https", category: "access", title: "Served over HTTPS", max: 3,
+    id: "https", category: "access", title: "Served over HTTPS", issue: "Not served over HTTPS", max: 3,
     status: url.protocol === "https:" ? "pass" : "fail",
     summary: url.protocol === "https:" ? "Site is served over HTTPS." : "Site is not served over HTTPS.",
     detail: "Many agents and browsers refuse or downgrade insecure pages.",
@@ -170,7 +179,7 @@ function accessChecks(home: FetchResult, agent: FetchResult, robots: ParsedRobot
   // 4. Speed
   const ms = home.ms;
   out.push(check({
-    id: "speed", category: "access", title: "Homepage responds quickly", max: 4,
+    id: "speed", category: "access", title: "Homepage responds quickly", issue: "Homepage is slow to respond", max: 4,
     status: ms < 1500 ? "pass" : ms < 4000 ? "warn" : "fail",
     summary: `Homepage HTML loaded in ${(ms / 1000).toFixed(1)}s (${Math.round(home.bytes / 1024)} KB, ${home.redirects} redirect${home.redirects === 1 ? "" : "s"}).`,
     detail: "Agents work under tight time budgets and often give up on slow pages or move to a competitor's.",
@@ -184,7 +193,7 @@ function accessChecks(home: FetchResult, agent: FetchResult, robots: ParsedRobot
   const noindex = /noindex/.test(directives);
   const noai = /noai|noimageai/.test(directives);
   out.push(check({
-    id: "robots-directives", category: "access", title: "No page-level opt-out directives", max: 3,
+    id: "robots-directives", category: "access", title: "No page-level opt-out directives", issue: { fail: "Homepage tells search and AI tools not to index it", warn: "Homepage opts out of AI (noai)" }, max: 3,
     status: noindex ? "fail" : noai ? "warn" : "pass",
     summary: noindex ? "Homepage has a noindex directive." : noai ? "Homepage sets noai/noimageai." : "No noindex or noai directives on the homepage.",
     detail: `Found X-Robots-Tag: "${xRobots || "none"}", meta robots: "${metaRobots || "none"}".`,
@@ -203,7 +212,7 @@ async function discoverabilityChecks($: $Doc, robots: ParsedRobots | null, llms:
   const llmsValid = llms.ok && !looksLikeHtml(llms.body) && /^\s*#\s+\S/.test(llms.body);
   const llmsLinks = llmsValid ? (llms.body.match(/\]\(https?:\/\/[^)]+\)/g) || []).length : 0;
   out.push(check({
-    id: "llms-txt", category: "discoverability", title: "Has an llms.txt file", max: 8,
+    id: "llms-txt", category: "discoverability", title: "Has an llms.txt file", issue: { fail: "No llms.txt file", warn: "llms.txt is missing links or broken" }, max: 8,
     status: llmsValid ? (llmsLinks > 0 ? "pass" : "warn") : llms.ok && !looksLikeHtml(llms.body) ? "warn" : "fail",
     summary: llmsValid
       ? `/llms.txt found with ${llmsLinks} link${llmsLinks === 1 ? "" : "s"}${llmsFull.ok ? " (plus llms-full.txt)" : ""}.`
@@ -226,7 +235,7 @@ async function discoverabilityChecks($: $Doc, robots: ParsedRobots | null, llms:
   const sitemapValid = /<(urlset|sitemapindex)/i.test(sitemapBody);
   const locCount = (sitemapBody.match(/<loc>/gi) || []).length;
   out.push(check({
-    id: "sitemap", category: "discoverability", title: "Has an XML sitemap", max: 5,
+    id: "sitemap", category: "discoverability", title: "Has an XML sitemap", issue: { fail: "No XML sitemap", warn: "Sitemap isn't listed in robots.txt" }, max: 5,
     status: sitemapValid ? (sitemapUrls.length ? "pass" : "warn") : "fail",
     summary: sitemapValid
       ? `Sitemap found (${locCount} entries)${sitemapUrls.length ? ", listed in robots.txt" : ", but not listed in robots.txt"}.`
@@ -241,7 +250,7 @@ async function discoverabilityChecks($: $Doc, robots: ParsedRobots | null, llms:
   const titleOk = title.length >= 10 && title.length <= 70;
   const descOk = desc.length >= 50 && desc.length <= 170;
   out.push(check({
-    id: "meta", category: "discoverability", title: "Clear page title and description", max: 4,
+    id: "meta", category: "discoverability", title: "Clear page title and description", issue: { fail: "Page title or description is missing", warn: "Page title or description needs work" }, max: 4,
     status: titleOk && descOk ? "pass" : title && desc ? "warn" : "fail",
     summary: !title ? "Homepage has no <title>." : !desc ? "Homepage has no meta description." : titleOk && descOk ? "Title and description look good." : "Title or description is too short or too long.",
     detail: `Title (${title.length} chars): "${title}". Description (${desc.length} chars): "${desc}". Agents use these as the one-line answer to "what is this site?"`,
@@ -252,7 +261,7 @@ async function discoverabilityChecks($: $Doc, robots: ParsedRobots | null, llms:
   const canonical = $('link[rel="canonical"]').attr("href");
   const lang = $("html").attr("lang");
   out.push(check({
-    id: "canonical-lang", category: "discoverability", title: "Canonical URL and language declared", max: 3,
+    id: "canonical-lang", category: "discoverability", title: "Canonical URL and language declared", issue: "Canonical URL or language is missing", max: 3,
     status: canonical && lang ? "pass" : canonical || lang ? "warn" : "fail",
     summary: `${canonical ? "Canonical set" : "No canonical URL"}; ${lang ? `lang="${lang}"` : "no lang attribute"}.`,
     detail: "A canonical link stops agents from treating duplicate URLs as separate pages, and the lang attribute tells them what language to read in.",
@@ -272,7 +281,7 @@ function readabilityChecks($: $Doc, md: FetchResult): Check[] {
   const noscriptWarn = /enable javascript|requires javascript|javascript is (disabled|required)/i.test($("noscript").text());
 
   out.push(check({
-    id: "ssr", category: "readability", title: "Content is in the HTML (no JavaScript needed)", max: 15,
+    id: "ssr", category: "readability", title: "Content is in the HTML (no JavaScript needed)", issue: { fail: "Content needs JavaScript to load", warn: "Little content loads without JavaScript" }, max: 15,
     status: words >= 150 ? "pass" : words >= 50 ? "warn" : "fail",
     earned: words >= 150 ? 15 : words >= 50 ? 7 : 0,
     summary: words >= 150
@@ -290,7 +299,7 @@ function readabilityChecks($: $Doc, md: FetchResult): Check[] {
   let skips = 0;
   for (let i = 1; i < levels.length; i++) if (levels[i] - levels[i - 1] > 1) skips++;
   out.push(check({
-    id: "headings", category: "readability", title: "Logical heading structure", max: 4,
+    id: "headings", category: "readability", title: "Logical heading structure", issue: { fail: "No main heading (H1)", warn: "Heading structure is messy" }, max: 4,
     status: h1s === 1 && skips === 0 && levels.length >= 3 ? "pass" : h1s >= 1 ? "warn" : "fail",
     summary: `${h1s} H1${h1s === 1 ? "" : "s"}, ${levels.length} headings total, ${skips} skipped level${skips === 1 ? "" : "s"}.`,
     detail: "Agents use headings to outline a page and jump to the right section. Aim for one H1 and nested H2/H3s without skipping levels.",
@@ -301,7 +310,7 @@ function readabilityChecks($: $Doc, md: FetchResult): Check[] {
   const hasMain = $("main, [role=main]").length > 0;
   const hasNav = $("nav, [role=navigation]").length > 0;
   out.push(check({
-    id: "landmarks", category: "readability", title: "Semantic page landmarks", max: 3,
+    id: "landmarks", category: "readability", title: "Semantic page landmarks", issue: "Missing page landmarks (<main>, <nav>)", max: 3,
     status: hasMain && hasNav ? "pass" : hasMain || hasNav ? "warn" : "fail",
     summary: `${hasMain ? "<main>" : "no <main>"}, ${hasNav ? "<nav>" : "no <nav>"}.`,
     detail: "<main>, <nav>, <header> and <footer> let agents skip boilerplate and go straight to the content.",
@@ -329,7 +338,7 @@ function structureChecks($: $Doc): Check[] {
   const { types, invalid, blocks } = jsonLdTypes($);
   const useful = types.filter((t) => USEFUL_LD_TYPES.includes(t));
   out.push(check({
-    id: "jsonld", category: "structure", title: "Schema.org structured data (JSON-LD)", max: 10,
+    id: "jsonld", category: "structure", title: "Schema.org structured data (JSON-LD)", issue: { fail: "No structured data (JSON-LD)", warn: "Structured data is thin or invalid" }, max: 10,
     status: useful.length >= 2 && !invalid ? "pass" : types.length ? "warn" : "fail",
     earned: useful.length >= 2 && !invalid ? 10 : useful.length === 1 ? 6 : types.length ? 3 : 0,
     summary: blocks
@@ -341,7 +350,7 @@ function structureChecks($: $Doc): Check[] {
 
   const og = ["og:title", "og:description", "og:image"].filter((k) => meta($, k));
   out.push(check({
-    id: "opengraph", category: "structure", title: "Open Graph tags", max: 3,
+    id: "opengraph", category: "structure", title: "Open Graph tags", issue: "Missing Open Graph tags", max: 3,
     status: og.length === 3 ? "pass" : og.length ? "warn" : "fail",
     summary: `${og.length}/3 core Open Graph tags present.`,
     detail: "Open Graph tags (og:title, og:description, og:image) drive link previews in chat apps and are read by many AI tools.",
@@ -352,7 +361,7 @@ function structureChecks($: $Doc): Check[] {
   const missingAlt = imgs.filter((_, e) => $(e).attr("alt") === undefined).length;
   const pct = imgs.length ? Math.round(((imgs.length - missingAlt) / imgs.length) * 100) : 100;
   out.push(check({
-    id: "alt", category: "structure", title: "Images have alt text", max: 2,
+    id: "alt", category: "structure", title: "Images have alt text", issue: "Images are missing alt text", max: 2,
     status: pct >= 90 ? "pass" : pct >= 60 ? "warn" : "fail",
     summary: imgs.length ? `${pct}% of ${imgs.length} images have an alt attribute.` : "No <img> tags on the page.",
     detail: "Alt text is how agents understand images, product photos especially.",
@@ -369,7 +378,7 @@ function actionabilityChecks($: $Doc, endpoints: FetchResult[], origin: string):
   const total = u.buttons + u.links + u.inputs;
   const controls = $("a[href], button, input, select, textarea, [role=button]").length;
   out.push(check({
-    id: "a11y-names", category: "actionability", title: "Buttons, links and fields are labeled", max: 8,
+    id: "a11y-names", category: "actionability", title: "Buttons, links and fields are labeled", issue: "Unlabeled buttons, links or form fields", max: 8,
     status: total === 0 ? "pass" : total <= 3 ? "warn" : "fail",
     summary: total === 0 ? `All ${controls} interactive elements have names.` : `${total} of ${controls} interactive elements have no accessible name.`,
     detail:
@@ -380,7 +389,7 @@ function actionabilityChecks($: $Doc, endpoints: FetchResult[], origin: string):
   }));
 
   out.push(check({
-    id: "clickable-divs", category: "actionability", title: "Clickable things are real buttons or links", max: 3,
+    id: "clickable-divs", category: "actionability", title: "Clickable things are real buttons or links", issue: "Clickable elements aren't real buttons or links", max: 3,
     status: u.clickableDivs === 0 ? "pass" : u.clickableDivs <= 2 ? "warn" : "fail",
     summary: u.clickableDivs === 0 ? "No click handlers on plain divs/spans in the HTML." : `${u.clickableDivs} div/span elements with onclick and no role.`,
     detail: "Agents look for <button> and <a>. A <div onclick> is invisible to them as a control. (Only inline handlers in the HTML can be detected here; JS-attached handlers can't.)",
