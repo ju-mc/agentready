@@ -1,4 +1,4 @@
-# AgentReady: website agent-readiness scanner
+# AgentScore: website agent-readiness scanner
 
 Free deterministic scan (no LLM) plus a paid full report via Stripe Checkout.
 

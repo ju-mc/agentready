@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       price_data: {
         currency: "usd",
         unit_amount: PRICE_CENTS,
-        product_data: { name: `Full agent-readiness report: ${target.hostname}`, description: "Every check explained, fixes, page-by-page results, and ready-to-paste llms.txt, robots.txt and JSON-LD." },
+        product_data: { name: `AgentScore full report: ${target.hostname}`, description: "Every check explained, fixes, page-by-page results, and ready-to-paste llms.txt, robots.txt and JSON-LD." },
       },
     }],
     metadata: { url: target.toString() },

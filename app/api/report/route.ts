@@ -11,8 +11,8 @@ export async function GET(req: Request) {
   if (!r) return new Response("Payment required", { status: 402 });
   const host = new URL(r.finalUrl).hostname;
   const files: Record<string, [string, string, string]> = {
-    md: [reportMarkdown(r), "text/markdown", `agent-readiness-${host}.md`],
-    json: [JSON.stringify(r, null, 2), "application/json", `agent-readiness-${host}.json`],
+    md: [reportMarkdown(r), "text/markdown", `agentscore-${host}.md`],
+    json: [JSON.stringify(r, null, 2), "application/json", `agentscore-${host}.json`],
     llms: [r.artifacts?.llmsTxt ?? "", "text/plain", "llms.txt"],
     robots: [r.artifacts?.robotsTxt ?? "", "text/plain", "robots.txt"],
     jsonld: [r.artifacts?.jsonLd ?? "", "text/html", "jsonld-snippet.html"],

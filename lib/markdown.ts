@@ -4,7 +4,7 @@ const ICON = { pass: "✅", warn: "⚠️", fail: "❌", info: "ℹ️" } as con
 
 export function reportMarkdown(r: ScanResult): string {
   const L: string[] = [];
-  L.push(`# Agent Readiness Report: ${r.siteName}`, "");
+  L.push(`# AgentScore Report: ${r.siteName}`, "");
   L.push(`**URL:** ${r.finalUrl}  `, `**Scanned:** ${new Date(r.scannedAt).toUTCString()}  `, `**Score:** ${r.score}/100 (Grade ${r.grade})`, "");
   L.push("| Category | Score |", "|---|---|");
   for (const id of Object.keys(CATEGORIES) as CategoryId[]) L.push(`| ${CATEGORIES[id].label} | ${r.categories[id].score}/100 |`);
