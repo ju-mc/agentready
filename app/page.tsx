@@ -95,7 +95,7 @@ export default function Home() {
 
       {!result && !loading && (
         <div className="card small muted">
-          <strong style={{ color: "var(--fg)" }}>What we check:</strong> AI bots blocked by your firewall or robots.txt · content invisible without JavaScript · llms.txt and sitemaps · schema.org structured data · unlabeled buttons and forms that browser agents can&apos;t operate · API and agent manifests.
+          <strong style={{ color: "var(--fg)" }}>What we check:</strong> whether AI assistants can get into your site, understand what you offer, and actually take action, like recommending you, answering questions about you, or helping someone buy.
         </div>
       )}
     </main>
