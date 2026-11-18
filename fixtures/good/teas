@@ -1,0 +1,10 @@
+<!doctype html><html lang="en"><head><title>Acme Tea — Loose-leaf tea shipped weekly</title>
+<meta name="description" content="Acme Tea ships fresh loose-leaf tea from small farms to your door every week. Free shipping over $30.">
+<link rel="canonical" href="http://127.0.0.1:4010/">
+<meta property="og:title" content="Acme Tea"><meta property="og:description" content="Loose-leaf tea"><meta property="og:image" content="http://127.0.0.1:4010/logo.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"Acme Tea"},{"@type":"WebSite","name":"Acme Tea"},{"@type":"Product","name":"Sencha"}]}</script>
+</head><body><header><nav><a href="/teas">Teas</a><a href="/about">About</a><button aria-label="Open cart"><svg></svg></button></nav></header>
+<main><h1>Fresh loose-leaf tea, every week</h1><h2>How it works</h2><p>
+We source tea directly from small farms in Japan, China, India and Taiwan. Every week we pick a seasonal selection, pack it within 48 hours of arrival, and ship it to your door. Subscriptions start at twelve dollars a month and you can pause or cancel any time from your account page. Each box includes brewing notes, the farm story, and a tasting card so you can track what you like. Our most popular teas are a grassy Japanese sencha, a malty Assam, a floral Taiwanese oolong and a smoky lapsang souchong. We also sell teaware, including glass kettles, cast iron pots and bamboo whisks for matcha. Shipping is free on orders over thirty dollars in the United States. Gift subscriptions are available in three, six and twelve month terms.</p>
+<h2>Sign up</h2><form><label for="em">Email</label><input id="em" type="email"><button>Subscribe</button></form><img src="a.png" alt="Tea"></main>
+<footer>© Acme</footer></body></html>
