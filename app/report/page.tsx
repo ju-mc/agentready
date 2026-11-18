@@ -35,6 +35,9 @@ export default async function ReportPage({ searchParams }: { searchParams: Promi
     <main className="wrap">
       <h1>Agent readiness report</h1>
       <p className="muted small">Scanned {new Date(r.scannedAt).toUTCString()}</p>
+      <div className="fix noprint" style={{ marginBottom: 12 }}>
+        <strong>Save your report:</strong> bookmark this page or download a copy below. This link is your access to the report.
+      </div>
       <div className="row noprint" style={{ marginBottom: 8 }}>
         <PrintButton />
         <a className="btn secondary" href={dl("md")}>Download Markdown</a>
